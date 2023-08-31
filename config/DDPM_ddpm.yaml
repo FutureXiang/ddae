@@ -1,0 +1,36 @@
+# model params
+model_type: 'DDPM'
+net_type: 'UNet'
+diffusion:
+  n_T: 1000
+  betas: [1.0e-4, 0.02]
+network:
+  image_shape: [3, 32, 32]
+  n_channels: 128
+  ch_mults: [1, 2, 2, 2]
+  is_attn: [False, True, False, False]
+  dropout: 0.1
+  n_blocks: 2
+  use_res_for_updown: False
+
+# training params
+n_epoch: 2000
+batch_size: 128
+lrate: 1.0e-4
+warm_epoch: 13
+load_epoch: -1
+flip: True
+ema: 0.9999
+
+# testing params
+n_sample: 30
+save_dir: './output_DDPM_ddpm'
+save_model: True
+
+# linear probe
+linear:
+  n_epoch: 15
+  batch_size: 128
+  lrate: 1.0e-3
+  timestep: 11
+  blockname: 'out_6'

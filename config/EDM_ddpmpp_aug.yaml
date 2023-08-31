@@ -1,0 +1,45 @@
+# model params
+model_type: 'EDM'
+net_type: 'UNet'
+diffusion:
+  sigma_data: 0.5
+  p_mean: -1.2
+  p_std: 1.2
+  sigma_min: 0.002
+  sigma_max: 80
+  rho: 7
+  S_min: 0.01
+  S_max: 1
+  S_noise: 1.007
+  augment_prob: 0.12
+network:
+  image_shape: [3, 32, 32]
+  n_channels: 128
+  ch_mults: [2, 2, 2]
+  is_attn: [False, True, False]
+  dropout: 0.13
+  n_blocks: 4
+  use_res_for_updown: True
+  augment_dim: 9
+
+# training params
+n_epoch: 4000
+batch_size: 64
+lrate: 1.0e-4
+warm_epoch: 200
+load_epoch: -1
+flip: True
+ema: 0.9993
+
+# testing params
+n_sample: 30
+save_dir: './output_EDM_ddpmpp_aug'
+save_model: True
+
+# linear probe
+linear:
+  n_epoch: 15
+  batch_size: 128
+  lrate: 1.0e-3
+  timestep: 4
+  blockname: 'out_7'
