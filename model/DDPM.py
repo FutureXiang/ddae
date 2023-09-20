@@ -110,7 +110,7 @@ class DDPM(nn.Module):
         with autocast(enabled=use_amp):
             return self.loss(noise, self.nn_model(x_noised, t / self.n_T))
 
-    def get_feature(self, x, t, norm=False, use_amp=False):
+    def get_feature(self, x, t, name=None, norm=False, use_amp=False):
         ''' Get network's intermediate activation in a forward pass.
 
             Args:
@@ -136,7 +136,11 @@ class DDPM(nn.Module):
 
         with autocast(enabled=use_amp):
             _, acts = self.nn_model(x_noised, t / self.n_T, ret_activation=True)
-        return {blockname: gap_and_norm(acts[blockname], norm) for blockname in acts}
+        all_feats = {blockname: gap_and_norm(acts[blockname], norm) for blockname in acts}
+        if name is not None:
+            return all_feats[name]
+        else:
+            return all_feats
 
     def sample(self, n_sample, size, notqdm=False, use_amp=False):
         ''' Sampling with DDPM sampler. Actual NFE is `n_T`.

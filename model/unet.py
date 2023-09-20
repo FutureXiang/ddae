@@ -65,11 +65,11 @@ class ResidualBlock(nn.Module):
 
 
 class ResAttBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, time_channels, has_attn, dropout):
+    def __init__(self, in_channels, out_channels, time_channels, has_attn, attn_channels_per_head, dropout):
         super().__init__()
         self.res = ResidualBlock(in_channels, out_channels, time_channels, dropout=dropout)
         if has_attn:
-            self.attn = AttentionBlock(out_channels)
+            self.attn = AttentionBlock(out_channels, attn_channels_per_head)
         else:
             self.attn = nn.Identity()
 
@@ -80,10 +80,10 @@ class ResAttBlock(nn.Module):
 
 
 class MiddleBlock(nn.Module):
-    def __init__(self, n_channels, time_channels, dropout):
+    def __init__(self, n_channels, time_channels, attn_channels_per_head, dropout):
         super().__init__()
         self.res1 = ResidualBlock(n_channels, n_channels, time_channels, dropout=dropout)
-        self.attn = AttentionBlock(n_channels)
+        self.attn = AttentionBlock(n_channels, attn_channels_per_head)
         self.res2 = ResidualBlock(n_channels, n_channels, time_channels, dropout=dropout)
 
     def forward(self, x, t):
@@ -115,6 +115,7 @@ class UNet(nn.Module):
     def __init__(self, image_shape = [3, 32, 32], n_channels = 128,
                  ch_mults = (1, 2, 2, 2),
                  is_attn = (False, True, False, False),
+                 attn_channels_per_head = None,
                  dropout = 0.1,
                  n_blocks = 2,
                  use_res_for_updown = False,
@@ -147,10 +148,10 @@ class UNet(nn.Module):
             # Number of output channels at this resolution
             out_channels = n_channels * ch_mults[i]
             # `n_blocks` at the same resolution
-            down.append(ResAttBlock(in_channels, out_channels, time_channels, is_attn[i], dropout))
+            down.append(ResAttBlock(in_channels, out_channels, time_channels, is_attn[i], attn_channels_per_head, dropout))
             h_channels.append(out_channels)
             for _ in range(n_blocks - 1):
-                down.append(ResAttBlock(out_channels, out_channels, time_channels, is_attn[i], dropout))
+                down.append(ResAttBlock(out_channels, out_channels, time_channels, is_attn[i], attn_channels_per_head, dropout))
                 h_channels.append(out_channels)
             # Down sample at all resolutions except the last
             if i < n_resolutions - 1:
@@ -163,7 +164,7 @@ class UNet(nn.Module):
         self.down = nn.ModuleList(down)
 
         # Middle block
-        self.middle = MiddleBlock(out_channels, time_channels, dropout)
+        self.middle = MiddleBlock(out_channels, time_channels, attn_channels_per_head, dropout)
 
         # Up stages
         up = []
@@ -173,7 +174,7 @@ class UNet(nn.Module):
             out_channels = n_channels * ch_mults[i]
             # `n_blocks + 1` at the same resolution
             for _ in range(n_blocks + 1):
-                up.append(ResAttBlock(in_channels + h_channels.pop(), out_channels, time_channels, is_attn[i], dropout))
+                up.append(ResAttBlock(in_channels + h_channels.pop(), out_channels, time_channels, is_attn[i], attn_channels_per_head, dropout))
                 in_channels = out_channels
             # Up sample at all resolutions except last
             if i > 0:

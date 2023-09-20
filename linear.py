@@ -6,8 +6,7 @@ import torch
 import torch.distributed as dist
 import yaml
 import torch.nn as nn
-from torchvision import transforms
-from torchvision.datasets import CIFAR10
+from datasets import get_dataset
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from tqdm import tqdm
 from ema_pytorch import EMA
@@ -35,7 +34,7 @@ def get_model(opt, load_epoch):
 
 
 class ClassifierDict(nn.Module):
-    def __init__(self, feat_func, time_list, name_list, base_lr, epoch, img_shape, local_rank, num_classes=10):
+    def __init__(self, feat_func, time_list, name_list, base_lr, epoch, img_shape, local_rank, num_classes):
         super(ClassifierDict, self).__init__()
         self.feat_func = feat_func
         self.times = time_list
@@ -148,14 +147,8 @@ def train(opt):
         time_list = [opt.linear['timestep']]
         name_list = [opt.linear['blockname']]
 
-    train_set = CIFAR10("./data", train=True, transform=transforms.Compose([
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomCrop(32, 4),
-        transforms.ToTensor(),
-    ]))
-    valid_set = CIFAR10("./data", train=False, transform=transforms.Compose([
-        transforms.ToTensor(),
-    ]))
+    train_set = get_dataset(name=opt.dataset, root="./data", train=True, flip=True, crop=True)
+    valid_set = get_dataset(name=opt.dataset, root="./data", train=False)
     train_loader, sampler = DataLoaderDDP(
         train_set,
         batch_size=batch_size,
@@ -172,7 +165,7 @@ def train(opt):
     print0("Using DDP, lr = %f * %d" % (base_lr, DDP_multiplier))
     base_lr *= DDP_multiplier
     classifiers = ClassifierDict(feat_func, time_list, name_list,
-                                 base_lr, epoch, opt.network['image_shape'], local_rank).to(model.device)
+                                 base_lr, epoch, opt.network['image_shape'], local_rank, opt.classes).to(model.device)
 
     for e in range(epoch):
         sampler.set_epoch(e)

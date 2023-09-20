@@ -4,8 +4,7 @@ import os
 import torch
 import torch.distributed as dist
 import yaml
-from torchvision import transforms
-from torchvision.datasets import CIFAR10
+from datasets import get_dataset
 from torchvision.utils import make_grid, save_image
 from tqdm import tqdm
 from ema_pytorch import EMA
@@ -46,12 +45,8 @@ def train(opt):
     diff = torch.nn.parallel.DistributedDataParallel(
         diff, device_ids=[local_rank], output_device=local_rank)
 
-    tf = [transforms.ToTensor()]
-    if opt.flip:
-        tf = [transforms.RandomHorizontalFlip()] + tf
-    tf = transforms.Compose(tf)
-    train_set = CIFAR10("./data", train=True, download=False, transform=tf)
-    print0("CIFAR10 train dataset:", len(train_set))
+    train_set = get_dataset(name=opt.dataset, root="./data", train=True, flip=opt.flip)
+    print0("train dataset:", len(train_set))
 
     train_loader, sampler = DataLoaderDDP(train_set,
                                           batch_size=opt.batch_size,
@@ -152,6 +147,7 @@ if __name__ == "__main__":
                         help='node rank for distributed training')
     parser.add_argument("--use_amp", action='store_true', default=False)
     opt = parser.parse_args()
+    print0(opt)
 
     init_seeds(no=opt.local_rank)
     dist.init_process_group(backend='nccl')

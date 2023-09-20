@@ -98,7 +98,7 @@ class EDM(nn.Module):
         loss_4shape = weight * ((x - self.D_x(x_noised, sigma, use_amp, aug_label)) ** 2)
         return loss_4shape.mean()
 
-    def get_feature(self, x, t, steps=18, norm=False, use_amp=False):
+    def get_feature(self, x, t, steps=18, name=None, norm=False, use_amp=False):
         ''' Get network's intermediate activation in a forward pass.
 
             Args:
@@ -123,7 +123,11 @@ class EDM(nn.Module):
             return act
 
         _, acts = self.D_x(x_noised, sigma, use_amp, ret_activation=True)
-        return {blockname: gap_and_norm(acts[blockname], norm) for blockname in acts}
+        all_feats = {blockname: gap_and_norm(acts[blockname], norm) for blockname in acts}
+        if name is not None:
+            return all_feats[name]
+        else:
+            return all_feats
 
     def edm_sample(self, n_sample, size, steps=18, eta=0.0, notqdm=False, use_amp=False):
         ''' Sampling with EDM sampler. Actual NFE is `2 * steps - 1`.

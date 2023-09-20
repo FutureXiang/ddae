@@ -6,8 +6,7 @@ import torch
 import torch.distributed as dist
 import yaml
 import torch.nn as nn
-from torchvision import transforms
-from torchvision.datasets import CIFAR10
+from datasets import get_dataset
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from tqdm import tqdm
 from ema_pytorch import EMA
@@ -39,7 +38,7 @@ def get_model(opt, load_epoch):
 '''
 
 class Classifier(nn.Module):
-    def __init__(self, feat_func, blockname, dim, num_classes=10):
+    def __init__(self, feat_func, blockname, dim, num_classes):
         super(Classifier, self).__init__()
         self.feat_func = feat_func
         self.blockname = blockname
@@ -108,15 +107,15 @@ def train(opt):
         return acc
 
     yaml_path = opt.config
-    load_epoch = opt.load_epoch
+    ep = opt.epoch
     use_amp = opt.use_amp
     with open(yaml_path, 'r') as f:
         opt = yaml.full_load(f)
     print0(opt)
     opt = Config(opt)
-    if load_epoch == -1:
-        load_epoch = opt.n_epoch - 1
-    model = get_model(opt, load_epoch)
+    if ep == -1:
+        ep = opt.n_epoch - 1
+    model = get_model(opt, ep)
 
     epoch = opt.linear['n_epoch']
     batch_size = opt.linear['batch_size']
@@ -131,14 +130,8 @@ def train(opt):
     else:
         raise NotImplementedError
 
-    train_set = CIFAR10("./data", train=True, transform=transforms.Compose([
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomCrop(32, 4),
-        transforms.ToTensor(),
-    ]))
-    valid_set = CIFAR10("./data", train=False, transform=transforms.Compose([
-        transforms.ToTensor(),
-    ]))
+    train_set = get_dataset(name=opt.dataset, root="./data", train=True, flip=True, crop=True)
+    valid_set = get_dataset(name=opt.dataset, root="./data", train=False)
     train_loader, sampler = DataLoaderDDP(
         train_set,
         batch_size=batch_size,
@@ -158,7 +151,7 @@ def train(opt):
     print0("Using block:", blockname)
 
     dim = x[blockname].shape[-1]
-    model = Classifier(feat_func, blockname, dim).to(device)
+    model = Classifier(feat_func, blockname, dim, opt.classes).to(device)
     model = torch.nn.parallel.DistributedDataParallel(
         model, device_ids=[local_rank], output_device=local_rank)
 
@@ -204,7 +197,7 @@ def train(opt):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str)
-    parser.add_argument("--load_epoch", type=int, default=-1)
+    parser.add_argument("--epoch", type=int, default=-1)
     parser.add_argument('--local_rank', default=-1, type=int,
                         help='node rank for distributed training')
     parser.add_argument("--use_amp", action='store_true', default=False)

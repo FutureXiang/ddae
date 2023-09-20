@@ -21,7 +21,6 @@ def get_default_steps(model_type, steps):
 # ===== sampling =====
 
 def sample(opt):
-    print0(opt)
     yaml_path = opt.config
     local_rank = opt.local_rank
     use_amp = opt.use_amp
@@ -82,10 +81,10 @@ def sample(opt):
                 else:
                     x_gen = model.ddim_sample(**args, steps=steps, eta=eta)
         dist.barrier()
-        x_gen = gather_tensor(x_gen)
+        x_gen = gather_tensor(x_gen).cpu()
         if local_rank == 0:
             res.append(x_gen)
-            grid = make_grid(x_gen.cpu(), nrow=20)
+            grid = make_grid(x_gen, nrow=20)
             png_path = os.path.join(gen_dir, f"grid_{batch}.png")
             save_image(grid, png_path)
 
@@ -108,6 +107,7 @@ if __name__ == "__main__":
     parser.add_argument("--batches", type=int, default=125)
     parser.add_argument("--epoch", type=int, default=-1)
     opt = parser.parse_args()
+    print0(opt)
 
     init_seeds(no=opt.local_rank)
     dist.init_process_group(backend='nccl')

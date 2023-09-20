@@ -1,12 +1,10 @@
 import argparse
-import os
 from functools import partial
 
 import torch
 import torch.distributed as dist
 import torch.nn as nn
-from torchvision import transforms
-from torchvision.datasets import CIFAR10
+from datasets import get_dataset
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from tqdm import tqdm
 
@@ -153,14 +151,8 @@ def train(opt):
     else:
         raise NotImplementedError
 
-    train_set = CIFAR10("./data", train=True, transform=transforms.Compose([
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomCrop(32, 4),
-        transforms.ToTensor(),
-    ]))
-    valid_set = CIFAR10("./data", train=False, transform=transforms.Compose([
-        transforms.ToTensor(),
-    ]))
+    train_set = get_dataset(name='cifar', root="./data", train=True, flip=True, crop=True)
+    valid_set = get_dataset(name='cifar', root="./data", train=False)
     train_loader, sampler = DataLoaderDDP(
         train_set,
         batch_size=batch_size,

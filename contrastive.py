@@ -4,8 +4,7 @@ import os
 import torch
 import torch.distributed as dist
 import yaml
-from torchvision import transforms
-from torchvision.datasets import CIFAR10
+from datasets import get_dataset
 from tqdm import tqdm
 from ema_pytorch import EMA
 
@@ -21,7 +20,7 @@ def get_model(opt, load_epoch):
                      )
     diff.to(device)
     target = os.path.join(opt.save_dir, "ckpts", f"model_{load_epoch}.pth")
-    print("loading model at", target)
+    print0("loading model at", target)
     checkpoint = torch.load(target, map_location=device)
     ema = EMA(diff, beta=opt.ema, update_after_step=0, update_every=1)
     ema.to(device)
@@ -71,9 +70,7 @@ def metrics(opt):
     opt = Config(opt)
     timestep = opt.linear['timestep']
 
-    train_set_raw = CIFAR10("./data", train=True, transform=transforms.Compose([
-        transforms.ToTensor(),
-    ]))
+    train_set_raw = get_dataset(name=opt.dataset, root="./data", train=True)
     train_loader_raw, _ = DataLoaderDDP(
         train_set_raw,
         batch_size=128,
@@ -136,7 +133,7 @@ if __name__ == "__main__":
                         help='node rank for distributed training')
     parser.add_argument("--use_amp", action='store_true', default=False)
     opt = parser.parse_args()
-    print(opt)
+    print0(opt)
 
     local_rank = opt.local_rank
     init_seeds(no=local_rank)

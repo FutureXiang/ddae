@@ -1,3 +1,7 @@
+# dataset params
+dataset: 'cifar'
+classes: 10
+
 # model params
 model_type: 'EDM'
 net_type: 'UNet'

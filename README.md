@@ -172,9 +172,9 @@ and compare their noise-conditional recognition rates with DDAE-based MLP classi
 ```sh
 python -m torch.distributed.launch --nproc_per_node=4
   # using DDPM DDAE encoder
-  noisy_classifier_DDAE.py --config config/DDPM_ddpm.yaml  --use_amp --load_epoch 1999
+  noisy_classifier_DDAE.py --config config/DDPM_ddpm.yaml  --use_amp --epoch 1999
   # using EDM DDAE encoder
-  noisy_classifier_DDAE.py --config config/EDM_ddpmpp.yaml --use_amp --load_epoch 1200
+  noisy_classifier_DDAE.py --config config/EDM_ddpmpp.yaml --use_amp --epoch 1200
 ```
 
 ## Acknowledgments

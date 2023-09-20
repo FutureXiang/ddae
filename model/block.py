@@ -1,3 +1,4 @@
+import os
 import math
 import torch
 import torch.nn as nn
@@ -38,7 +39,7 @@ class TimeEmbedding(nn.Module):
 
 
 class AttentionBlock(nn.Module):
-    def __init__(self, n_channels, n_heads=1, d_k=None):
+    def __init__(self, n_channels, d_k):
         """
         * `n_channels` is the number of channels in the input
         * `n_heads` is the number of heads in multi-head attention
@@ -49,6 +50,7 @@ class AttentionBlock(nn.Module):
         # Default `d_k`
         if d_k is None:
             d_k = n_channels
+        n_heads = n_channels // d_k
 
         self.norm = GroupNorm32(n_channels)
         # Projections for query, key and values
@@ -59,6 +61,8 @@ class AttentionBlock(nn.Module):
         self.scale = 1 / math.sqrt(math.sqrt(d_k))
         self.n_heads = n_heads
         self.d_k = d_k
+        if 'LOCAL_RANK' not in os.environ or int(os.environ['LOCAL_RANK']) == 0:
+            print(f"{self.n_heads} heads, {self.d_k} channels per head")
 
     def forward(self, x):
         """
