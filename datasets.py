@@ -3,7 +3,7 @@ from PIL import Image
 
 from torch.utils.data import Dataset
 from torchvision import transforms
-from torchvision.datasets import CIFAR10
+from torchvision.datasets import CIFAR10, CIFAR100
 
 
 class TinyImageNet(Dataset):
@@ -72,9 +72,12 @@ class TinyImageNet(Dataset):
         return image, label
 
 
-def get_dataset(name, root="./data", train=True, flip=False, crop=False):
+def get_dataset(name, root="./data", train=True, flip=False, crop=False, resize=None):
     if name == 'cifar':
         DATASET = CIFAR10
+        RES = 32
+    elif name == 'cifar100':
+        DATASET = CIFAR100
         RES = 32
     elif name == 'tiny':
         DATASET = TinyImageNet
@@ -83,6 +86,8 @@ def get_dataset(name, root="./data", train=True, flip=False, crop=False):
         raise NotImplementedError
 
     tf = [transforms.ToTensor()]
+    if resize is not None:
+        tf = [transforms.Resize(resize)] + tf
     if train:
         if crop:
             tf = [transforms.RandomCrop(RES, 4)] + tf
