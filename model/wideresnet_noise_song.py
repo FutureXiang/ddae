@@ -71,7 +71,7 @@ class WideResnetBlock(nn.Module):
             nn.Linear(time_channels, planes)
         )
 
-    def forward(self, x, temb=None):
+    def forward(self, x, temb):
         if self.activate_before_residual:
             x = self.init_bn(x)
             orig_x = x
@@ -83,8 +83,7 @@ class WideResnetBlock(nn.Module):
             block_x = self.init_bn(block_x)
 
         block_x = self.conv1(block_x)
-        if temb is not None:
-            block_x += self.time_emb(temb)[:, :, None, None]
+        block_x += self.time_emb(temb)[:, :, None, None]
 
         block_x = self.bn_2(block_x)
         block_x = self.conv2(block_x)
@@ -107,7 +106,7 @@ class WideResnetGroup(nn.Module):
                 blk = WideResnetBlock(planes, planes, time_channels, 1, False)
             self.blocks.append(blk)
 
-    def forward(self, x, temb=None):
+    def forward(self, x, temb):
         for b in self.blocks:
             x = b(x, temb)
         return x
@@ -152,9 +151,9 @@ class WideResnet(nn.Module):
         temb = self.time_emb_mlp(temb)
 
         x = self.init_conv(x)
-        x = self.group1(x)
-        x = self.group2(x)
-        x = self.group3(x)
+        x = self.group1(x, temb)
+        x = self.group2(x, temb)
+        x = self.group3(x, temb)
         x = self.pre_pool_bn(x)
         x = F.avg_pool2d(x, x.shape[-1])
         x = x.view(x.shape[0], -1)

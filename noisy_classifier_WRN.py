@@ -166,7 +166,7 @@ def train(opt):
 
     model = wide_28_10_song(num_classes=10).to(device)
     model = torch.nn.parallel.DistributedDataParallel(
-        model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
+        model, device_ids=[local_rank], output_device=local_rank)
     loss_fn = nn.CrossEntropyLoss()
     optim = torch.optim.SGD(model.parameters(), lr=base_lr, momentum=0.9, weight_decay=5e-4)
     scheduler = CosineAnnealingLR(optim, epoch)
