@@ -13,6 +13,9 @@ This is a multi-gpu PyTorch implementation of the paper [Denoising Diffusion Aut
   year={2023}
 }
 ```
+:star: (News) Our paper is cited by Kaiming He's new paper [Deconstructing Denoising Diffusion Models for Self-Supervised Learning](https://arxiv.org/abs/2401.14404), check it out! :fire:
+
+## Overview
 
 This repo contains:
 - [x] Pre-training, sampling and FID evaluation code for diffusion models, including
