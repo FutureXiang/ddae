@@ -1,3 +1,6 @@
+🆕 **[2025] Please check out the more recent study [DDAE++](https://github.com/FutureXiang/ddae_plus_plus) continuing this line of work.**
+
+
 # Denoising Diffusion Autoencoders (DDAE)
 
 <p align="center">
